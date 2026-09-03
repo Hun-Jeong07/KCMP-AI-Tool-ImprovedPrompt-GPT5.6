@@ -549,6 +549,7 @@ function onOpen() {
     .addSeparator()
     .addItem('13. 다이어그램 작성', 'menu_drawDiagram')
     .addSeparator()
+    .addItem('기타. 개인 API키 삭제', 'clearMyApiKey')
     .addItem('기타. 캐시 초기화', 'menu_resetCache')
     .addToUi();
 }
