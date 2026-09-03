@@ -529,6 +529,7 @@ function onOpen() {
   var ui = SpreadsheetApp.getUi();
 
   ui.createMenu('AI 코딩')
+    .addItem('0. 시작 안내', 'showGettingStartedGuide')
     .addItem('1. API키 설정', 'menu_setApiKey')
     .addSeparator()
     .addItem('2. 헤더 설정', 'menu_setupHeaders')
@@ -550,6 +551,37 @@ function onOpen() {
     .addSeparator()
     .addItem('기타. 캐시 초기화', 'menu_resetCache')
     .addToUi();
+}
+
+
+/**
+ * 애드온 첫 실행 안내를 사이드바로 표시합니다.
+ * 안내는 자동 결과를 연구자 검토 없이 확정하지 않도록 명시합니다.
+ */
+function showGettingStartedGuide(){
+  var html = HtmlService.createHtmlOutput(
+    '<!doctype html><html><head><base target="_top"><style>' +
+    'body{font-family:Arial,sans-serif;line-height:1.55;padding:16px;color:#202124}' +
+    'h1{font-size:19px;margin:0 0 12px}h2{font-size:15px;margin:18px 0 6px}' +
+    'table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #dadce0;padding:6px;text-align:left}' +
+    '.note{background:#fff8e1;border-left:4px solid #fbbc04;padding:10px;margin-top:14px}' +
+    '</style></head><body>' +
+    '<h1>KCMP AI 코딩 시작 안내</h1>' +
+    '<h2>1. 전사 데이터 준비</h2>' +
+    '<p>4명 내외 소집단 녹음을 전사합니다. <b>1행은 헤더 행</b>이며, 실제 전사 데이터는 2행부터 입력합니다.</p>' +
+    '<table><tr><th>열</th><th>입력 내용</th></tr><tr><td>A</td><td>화자 이름</td></tr><tr><td>B</td><td>타임스탬프</td></tr><tr><td>C</td><td>발화 내용</td></tr></table>' +
+    '<h2>2. 개인 API 키 설정</h2>' +
+    '<p>OpenAI Platform에서 결제를 활성화한 뒤, <b>AI 코딩 → 1. API키 설정</b>에서 본인의 API 키를 입력합니다. 키는 현재 사용자에게만 저장되며 사용 요금은 해당 OpenAI 계정에 청구됩니다.</p>' +
+    '<h2>3. 분석 실행 순서</h2>' +
+    '<p>헤더 설정 → 교사·학생 지정 → 클러스터링 → 화자별 발화분석을 실행합니다. 이후 K, C, M, P는 실행 시간 제한을 고려해 <b>이어서 코딩</b> 메뉴를 완료될 때까지 반복 실행합니다.</p>' +
+    '<div class="note"><b>중요:</b> 자동 코딩 결과는 초안입니다. 최종 사용 전에 반드시 원문 전사본과 대조하고, 연구자 또는 교사가 코드와 근거를 검토·수정하세요.</div>' +
+    '</body></html>'
+  ).setTitle('KCMP AI 코딩 시작 안내');
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function onInstall(e){
+  onOpen(e);
 }
 
 /** 클러스터링 메뉴 연결 */
@@ -4245,29 +4277,34 @@ function preflightAndGetCols(){
 /*** 키/설정 UI ***/
 function setApiKeyOnce(){
   var ui = SpreadsheetApp.getUi();
-  var resp = ui.prompt("OpenAI API Key 입력", "sk- 로 시작하는 키를 입력하세요(스크립트 속성에 저장).", ui.ButtonSet.OK_CANCEL);
+  var resp = ui.prompt(
+    "OpenAI API Key 입력",
+    "본인만 사용하는 OpenAI API 키를 입력하세요. 이 키는 현재 사용자 계정에만 저장되며, 스프레드시트·다른 사용자·GitHub에는 기록되지 않습니다.",
+    ui.ButtonSet.OK_CANCEL
+  );
   if (resp.getSelectedButton() !== ui.Button.OK) return;
   var key = (resp.getResponseText() || "").trim();
   if (!key) { ui.alert("키가 비어 있습니다."); return; }
-  PropertiesService.getScriptProperties().setProperty('OPENAI_API_KEY', key);
-  ui.alert("API Key가 저장되었습니다.");
+  if (!key.startsWith('sk-')) {
+    ui.alert("API 키 형식이 올바르지 않습니다. sk-로 시작하는 키를 입력하세요.");
+    return;
+  }
+  PropertiesService.getUserProperties().setProperty('OPENAI_API_KEY', key);
+  ui.alert("개인 API Key가 저장되었습니다. 이 키의 사용 요금은 본인의 OpenAI 계정에 청구됩니다.");
+}
+function clearMyApiKey(){
+  PropertiesService.getUserProperties().deleteProperty('OPENAI_API_KEY');
+  SpreadsheetApp.getUi().alert("현재 사용자에게 저장된 API Key를 삭제했습니다.");
 }
 function getApiKey(){
-  try {
-    var key = PropertiesService.getScriptProperties().getProperty('OPENAI_API_KEY');
-    Logger.log("API 키 확인: " + (key ? "설정됨 (길이: " + key.length + ")" : "설정되지 않음"));
-    if (!key || key === '' || key === null || key === undefined) {
-      throw new Error('API Key가 설정되지 않았습니다. [API키 설정] 메뉴에서 API 키를 입력하세요.');
-    }
-    if (!key.startsWith('sk-')) {
-      Logger.log("API 키 형식 오류: " + key.substring(0, 10) + "...");
-      throw new Error('API 키 형식이 올바르지 않습니다. sk-로 시작해야 합니다.');
-    }
-    return key;
-  } catch (e) {
-    Logger.log("API 키 확인 실패: " + e.toString());
-    throw e;
+  var key = PropertiesService.getUserProperties().getProperty('OPENAI_API_KEY');
+  if (!key) {
+    throw new Error('API Key가 설정되지 않았습니다. [AI 코딩] → [1. API키 설정]에서 본인의 키를 입력하세요.');
   }
+  if (!key.startsWith('sk-')) {
+    throw new Error('API 키 형식이 올바르지 않습니다. sk-로 시작하는 키를 입력하세요.');
+  }
+  return key;
 }
 
 /**
