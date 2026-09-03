@@ -32,6 +32,10 @@ K·C·M·P 분석은 Google Apps Script 실행 시간 제한을 피하도록 배
 
 자동 코딩 결과는 연구·교육 판단을 보조하는 초안입니다. 최종 사용 전 반드시 원문 전사본과 대조하고, 연구자 또는 교사가 결과와 근거를 검토·수정해야 합니다.
 
+## 테스트 설치
+
+테스트 스프레드시트에 설치하는 순서는 [TEST_INSTALL.md](./TEST_INSTALL.md)를 따르세요.
+
 ## 현재 배포 단계
 
 이 저장소는 Google Sheets Editor add-on 배포를 준비하는 개발 단계입니다. 공개 Google Workspace Marketplace 게시 전에는 OAuth 권한, 개인정보 처리 안내, 테스트 배포 및 Google 검토 요건을 추가로 충족해야 합니다.
