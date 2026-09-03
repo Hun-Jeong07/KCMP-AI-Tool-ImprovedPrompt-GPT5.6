@@ -568,6 +568,11 @@ function showGettingStartedGuide(){
     '.note{background:#fff8e1;border-left:4px solid #fbbc04;padding:10px;margin-top:14px}' +
     '</style></head><body>' +
     '<h1>KCMP AI 코딩 시작 안내</h1>' +
+    '<h2>저작권 안내</h2>' +
+    '<p><b>소집단 담화 인식적 행위주체성 분석·시각화 프로그램</b><br>' +
+    '등록번호: C-2026-005466<br>' +
+    '저작자: 정훈<br>' +
+    '창작일: 2026년 1월 8일 · 등록일: 2026년 1월 27일</p>' +
     '<h2>1. 전사 데이터 준비</h2>' +
     '<p>4명 내외 소집단 녹음을 전사합니다. <b>1행은 헤더 행</b>이며, 실제 전사 데이터는 2행부터 입력합니다.</p>' +
     '<table><tr><th>열</th><th>입력 내용</th></tr><tr><td>A</td><td>화자 이름</td></tr><tr><td>B</td><td>타임스탬프</td></tr><tr><td>C</td><td>발화 내용</td></tr></table>' +
